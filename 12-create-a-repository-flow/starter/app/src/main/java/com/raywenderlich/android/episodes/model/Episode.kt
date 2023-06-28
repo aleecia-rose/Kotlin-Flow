@@ -47,5 +47,6 @@ data class Episode(
   val trilogy: Int
 )
 
-inline class Trilogy(val number: Int)
+@JvmInline
+value class Trilogy(val number: Int)
 val NoTrilogy = Trilogy(-1)
