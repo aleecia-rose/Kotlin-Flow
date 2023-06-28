@@ -101,10 +101,12 @@ class EpisodesFragment : Fragment(), Injectable, CoroutineScope {
     job.cancel()
   }
 
+  @Deprecated("Deprecated in Java")
   override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
     inflater.inflate(R.menu.menu, menu)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun onOptionsItemSelected(item: MenuItem): Boolean {
     return when (item.itemId) {
       R.id.filter_prequels -> {
