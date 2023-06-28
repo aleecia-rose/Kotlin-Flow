@@ -40,9 +40,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raywenderlich.android.episodes.model.Episode
 import com.raywenderlich.android.episodes.model.EpisodeRepository
+import com.raywenderlich.android.episodes.model.NoTrilogy
 import com.raywenderlich.android.episodes.model.Trilogy
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -61,8 +68,25 @@ class EpisodesViewModel @Inject constructor(
   val spinner: LiveData<Boolean>
     get() = _spinner
 
-  val episodesUsingFlow: Flow<List<Episode>> =
-      episodeRepository.episodesFlow
+  @OptIn(ObsoleteCoroutinesApi::class)
+  private val trilogyChannel = ConflatedBroadcastChannel<Trilogy>()
+
+  @OptIn(ObsoleteCoroutinesApi::class)
+  val episodesUsingFlow: Flow<List<Episode>> = trilogyChannel.asFlow()
+    .flatMapLatest { trilogy ->
+      _spinner.value = true
+      if (trilogy == NoTrilogy) {
+        episodeRepository.episodesFlow
+      } else {
+        episodeRepository.getEpisodesForTrilogyFlow(trilogy)
+      }
+        .onEach {
+          _spinner.value = false
+        }
+    }
+    .catch { throwable ->
+      _snackbar.value = throwable.message
+    }
 
   init {
     clearTrilogyNumber()
@@ -70,11 +94,15 @@ class EpisodesViewModel @Inject constructor(
     loadData { episodeRepository.tryUpdateRecentEpisodesCache() }
   }
 
+  @OptIn(ObsoleteCoroutinesApi::class)
   fun setTrilogyNumber(num: Int) {
+    trilogyChannel.trySend(Trilogy(num)).isSuccess
     loadData { episodeRepository.tryUpdateRecentEpisodesForTrilogyCache(Trilogy(num)) }
   }
 
+  @OptIn(ObsoleteCoroutinesApi::class)
   private fun clearTrilogyNumber() {
+    trilogyChannel.trySend(NoTrilogy).isSuccess
     loadData { episodeRepository.tryUpdateRecentEpisodesCache() }
   }
 
