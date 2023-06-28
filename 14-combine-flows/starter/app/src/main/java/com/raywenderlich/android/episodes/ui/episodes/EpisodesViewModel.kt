@@ -42,7 +42,9 @@ import com.raywenderlich.android.episodes.model.Episode
 import com.raywenderlich.android.episodes.model.EpisodeRepository
 import com.raywenderlich.android.episodes.model.NoTrilogy
 import com.raywenderlich.android.episodes.model.Trilogy
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -63,8 +65,10 @@ class EpisodesViewModel @Inject constructor(
   val spinner: LiveData<Boolean>
     get() = _spinner
 
+  @OptIn(ObsoleteCoroutinesApi::class)
   private val trilogyChannel = ConflatedBroadcastChannel<Trilogy>()
 
+  @OptIn(ObsoleteCoroutinesApi::class, ExperimentalCoroutinesApi::class)
   val episodesUsingFlow: Flow<List<Episode>> = trilogyChannel.asFlow()
       .flatMapLatest { trilogy ->
         _spinner.value = true
@@ -87,13 +91,15 @@ class EpisodesViewModel @Inject constructor(
     loadData { episodeRepository.tryUpdateRecentEpisodesCache() }
   }
 
+  @OptIn(ObsoleteCoroutinesApi::class)
   fun setTrilogyNumber(num: Int) {
-    trilogyChannel.offer(Trilogy(num))
+    trilogyChannel.trySend(Trilogy(num)).isSuccess
     loadData { episodeRepository.tryUpdateRecentEpisodesForTrilogyCache(Trilogy(num)) }
   }
 
+  @OptIn(ObsoleteCoroutinesApi::class)
   private fun clearTrilogyNumber() {
-    trilogyChannel.offer(NoTrilogy)
+    trilogyChannel.trySend(NoTrilogy).isSuccess
     loadData { episodeRepository.tryUpdateRecentEpisodesCache() }
   }
 
