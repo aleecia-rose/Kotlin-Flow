@@ -37,7 +37,7 @@
  import kotlinx.coroutines.runBlocking
  import kotlin.system.measureTimeMillis
 
-fun jediTrainees(): Flow<ForceUser> = forceUser.asFlow()
+fun jediTrainees(): Flow<ForceUser> = forceUsers.asFlow()
     .transform { forceUser -> 
         if (forceUser is Padawan) {
             delay(DELAY) // Jedi Knight training
@@ -88,7 +88,7 @@ fun main() = runBlocking {
 
     time = measureTimeMillis {
         jediTrainees()
-            .collectLastest { jedi ->
+            .collectLatest { jedi ->
                 log("Jedi Master training for ${jedi.name}")
                 delay(3 * DELAY) // Jedi Master training
                 log("Jedi ${jedi.name} is now a Jedi Master")
